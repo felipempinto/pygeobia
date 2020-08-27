@@ -5,25 +5,12 @@ import time
 
 if __name__=='__main__':
 
-    # t1=time.time()
-    # try:
-    #     # im=r'samples/Ortomosaico.tif'
-    #     im=r'samples/Clip_IR.tif'
-    #     img=readimg.imread(im)
-    #     s=segmentation.Seg(img)
-    #     s.SLIC(1000,0.01,1.0,os.path.join(r'samples/output','SLIC4.tif'))
-    # except MemoryError as e:
-    #     print(e)
-    # t2=time.time()
-    # print(f"Segmentation finished in {t2-t1} seconds")
 
 
-
-    #im=r'samples/Seg_FalsaCorTGI.tif'
-    im=os.path.join(r'samples/output','SLIC4.tif')
+    im=r'samples/Seg_FalsaCorTGI.tif'
     img=readimg.imread(im)
     shp=r'samples/AmostrasTGI2.shp'
-    imOut=r'samples/output/Classified2.tif'
+    imOut=r'samples/output/test.tif'
 
     t1=time.time()
     c=classification.classify(img)

@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-import gdal
 import sys
 import os
 sys.path.insert(1, os.path.dirname(__file__))
@@ -13,6 +12,7 @@ import geopandas as gpd
 from rasterio.mask import mask
 import rasterio as rio
 from sklearn.metrics import accuracy_score
+import gdal
 
 
 class classify:
@@ -46,48 +46,39 @@ class classify:
             pred=clf.predict(X_test)
             return accuracy_score(y_test, pred)
 
+        
 
-    def get_samples(self,vector_file,column='id',trainTest=0.0,noData=256):
-        img=self.img.img_name
-        shapefile = gpd.read_file(vector_file)
+    def get_samples(self,shp,nodata=-9999,trainTest=0,column='id'):
+        img = rio.open(self.img.img_name)
+        epsg=img.crs.to_epsg()
+        gdf = gpd.read_file(shp)
+        gdf=gdf.to_crs(epsg=epsg)
+
         X=[]
         y=[]
-        #cont=1
-        #total=len(shapefile)
-        for i in range(len(shapefile['geometry'])):
-            with rio.open(img) as imgOriginal:
-                try:
-                    extent_geojson = mapping(shapefile['geometry'][i])
-                except AttributeError:
-                    print(f"Geometry {i} with problems")
-                else:
-                    imgRec,_= mask(imgOriginal,
-                                   [extent_geojson],
-                                   nodata=noData,
-                                   crop=True)
-                    
-                    XTemp=[]
 
-                    shape=np.shape(imgRec)
-                    merge=cv2.merge(imgRec)
-                    re=np.reshape(merge,(shape[1]*shape[2],shape[0]))
-                    no=np.array([noData]*shape[0],dtype=re.dtype)
-                    re=re[re!=no]
-                    XTemp=np.reshape(re,(int(np.shape(re)[0]/shape[0]),shape[0]))
+        for i in gdf.index:
+            idx = gdf[column][i]
+            geo = gdf['geometry'][i]
+            extent_geojson = mapping(geo)
+            im,_ = mask(img,
+                        [extent_geojson],
+                        nodata=nodata,
+                        crop=True)
+            no = [nodata]*np.shape(im)[0]
+            no = np.array(no,dtype=im.dtype)
+            im = cv2.merge(im)
+            re = np.reshape(im,(np.shape(im)[0]*np.shape(im)[1],np.shape(im)[2]))
+            mask_img = no!=re
+            marr = np.ma.MaskedArray(re, mask=~mask_img)
+            im = np.ma.compress_rows(marr)
+            X += list(im)
+            y += [idx]*len(im)
 
-            for l in XTemp:
-                # if l not in X:
-                X.append(l)
-                y.append(shapefile[column][i])
-            #print(f"Loop {cont} of {total} done!")
-            #cont+=1
         if trainTest==0:
             return X,y
         elif trainTest>=1:
-            raise Exception("Error: you need to pass a value between 0 and 1.")
+            raise Exception("Erro: A porcentagem deve ser maior do que 0 e menor do que 1.")
         else:
-            # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=trainTest)
-            # return X_train, X_test, y_train, y_test
-            return train_test_split(X, y, test_size=trainTest)
-
-        
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=trainTest)
+            return X_train, X_test, y_train, y_test

@@ -49,14 +49,18 @@ class imread:
         '''    
         driver = gdal.GetDriverByName(driver)
         shape = np.shape(array)
-        if len(shape) == 2:
-            n = 1
-        elif len(shape) == 3:
-            n = shape[2]
-        else:
-            raise ValueError(f'The input array should be an 2D or 3D array, not an {len(shape)}D array')
-
-        bands = cv2.split(array)
+        # if len(shape) == 2:
+        #     n = 1
+        # elif len(shape) == 3:
+        #     n = shape[2]
+        # else:
+        #     raise ValueError(f'The input array should be an 2D or 3D array, not an {len(shape)}D array')
+        n=self.img.RasterCount
+        try:
+            bands = cv2.split(array)
+        except TypeError:
+            print("ERROOO")
+            bands = array
         proj = self.img.GetProjection()
         georef = self.img.GetGeoTransform()
 

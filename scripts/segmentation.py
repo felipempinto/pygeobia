@@ -54,6 +54,15 @@ class Seg:
         if export:
             self.img.new_img(segments, outname)
 
+    def watersheed(self,outname=''):
+        if outname=='':
+            outname=os.path.join(os.path.dirname(self.img.img_name),'Watersheed.tif')
+        ar=self.img.get_array()
+        ws=segmentation.watershed(ar)
+        #ws=label2rgb(ws, ar, kind='avg')
+        self.img.new_img(ws, outname)
+
+
 
 # def SLIC(img):
 #     img=gdal.Open(img)
